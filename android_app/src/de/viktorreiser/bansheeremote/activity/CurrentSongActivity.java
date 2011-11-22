@@ -432,7 +432,7 @@ public class CurrentSongActivity extends Activity implements OnBansheeServerChec
 				.setIcon(R.drawable.sync);
 		menu.add(Menu.NONE, 3, Menu.NONE, R.string.settings)
 				.setIcon(R.drawable.settings);
-		
+		menu.add(Menu.NONE, 4, Menu.NONE, R.string.search);
 		return true;
 	}
 	
@@ -458,7 +458,9 @@ public class CurrentSongActivity extends Activity implements OnBansheeServerChec
 		case 3:
 			startActivityForResult(new Intent(this, SettingsActivity.class), REQUEST_SEETINGS);
 			return true;
-			
+		case 4:
+			startActivity(new Intent(this, SearchActivity.class));
+			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}

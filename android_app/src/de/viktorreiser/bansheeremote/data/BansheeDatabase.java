@@ -845,4 +845,56 @@ public class BansheeDatabase {
 		public static final String ART_ID = "artId";
 		public static final String TRACK_NUMBER = "trackNumber";
 	}
+	
+
+	/**
+	 * Get tracks with matching titles
+	 * 
+	 * @param title search item
+	 * 
+	 * @return tracks with searched title
+	 */
+	public static Track[] getTracksByTitle(String search) {
+		TreeSet<Track> result = new TreeSet<Track>(new Comparator<Track>() {
+			@Override
+			public int compare(Track lhs, Track rhs) {
+				char lc = lhs.title.charAt(0);
+				char rc = rhs.title.charAt(0);
+				boolean ra = Character.isLetter(rc);
+				int result;
+				
+				if (Character.isLetter(lc)) {
+					result = ra ? lhs.title.compareToIgnoreCase(rhs.title) : 1;
+				} else {
+					result = ra ? -1 : lhs.title.compareToIgnoreCase(rhs.title);
+				}
+				
+				return result == 0 ? -1 : result;
+			}
+		});
+		
+		Cursor c = mBansheeDatabase.query(
+				DB.TABLE_TRACKS,
+				new String [] {
+						DB.ID, DB.ARTIST_ID, DB.ALBUM_ID, DB.TITLE,
+						DB.TRACK_NUMBER, DB.DURATION, DB.YEAR, DB.GENRE},
+						DB.TITLE + " LIKE ?", new String [] { "%" + search + "%" } , null, null, null);
+		
+		while (c.moveToNext()) {
+			String title = cleanString(c, 3);
+			Track i = new Track();
+			
+			i.id = c.getLong(0);
+			i.artistId = c.getLong(1);
+			i.albumId = c.getLong(2);
+			i.title = "".equals(title) ? App.getContext().getString(R.string.unknown_track) : title;
+			i.trackNumber = cleanInt(c, 4);
+			i.duration = cleanInt(c, 5);
+			i.year = cleanInt(c, 6);
+			i.genre = cleanString(c, 7);
+			
+			result.add(i);
+		}	
+		return result.toArray(new Track[0]);
+	}
 }

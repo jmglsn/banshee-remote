@@ -71,6 +71,7 @@
 				<action android:name="android.net.wifi.supplicant.CONNECTION_CHANGE" />
 			</intent-filter>
 		</receiver>
+		<activity android:name=".activity.SearchActivity"></activity>
 
 	</application>
 
