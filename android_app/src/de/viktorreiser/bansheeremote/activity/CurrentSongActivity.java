@@ -432,7 +432,8 @@ public class CurrentSongActivity extends Activity implements OnBansheeServerChec
 				.setIcon(R.drawable.sync);
 		menu.add(Menu.NONE, 3, Menu.NONE, R.string.settings)
 				.setIcon(R.drawable.settings);
-		menu.add(Menu.NONE, 4, Menu.NONE, R.string.search);
+		menu.add(Menu.NONE, 4, Menu.NONE, R.string.search)
+				.setIcon(R.drawable.search);
 		return true;
 	}
 	
