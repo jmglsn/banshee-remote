@@ -3,6 +3,7 @@ package de.viktorreiser.bansheeremote.data;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -855,30 +856,14 @@ public class BansheeDatabase {
 	 * @return tracks with searched title
 	 */
 	public static Track[] getTracksByTitle(String search) {
-		TreeSet<Track> result = new TreeSet<Track>(new Comparator<Track>() {
-			@Override
-			public int compare(Track lhs, Track rhs) {
-				char lc = lhs.title.charAt(0);
-				char rc = rhs.title.charAt(0);
-				boolean ra = Character.isLetter(rc);
-				int result;
-				
-				if (Character.isLetter(lc)) {
-					result = ra ? lhs.title.compareToIgnoreCase(rhs.title) : 1;
-				} else {
-					result = ra ? -1 : lhs.title.compareToIgnoreCase(rhs.title);
-				}
-				
-				return result == 0 ? -1 : result;
-			}
-		});
+		ArrayList<Track> result = new ArrayList<Track>();
 		
 		Cursor c = mBansheeDatabase.query(
 				DB.TABLE_TRACKS,
 				new String [] {
 						DB.ID, DB.ARTIST_ID, DB.ALBUM_ID, DB.TITLE,
 						DB.TRACK_NUMBER, DB.DURATION, DB.YEAR, DB.GENRE},
-						DB.TITLE + " LIKE ?", new String [] { "%" + search + "%" } , null, null, null);
+						DB.TITLE + " LIKE ?", new String [] { "%" + search + "%" } , null, null, DB.TITLE + " ASC");
 		
 		while (c.moveToNext()) {
 			String title = cleanString(c, 3);
@@ -895,6 +880,62 @@ public class BansheeDatabase {
 			
 			result.add(i);
 		}	
+		c.close();
 		return result.toArray(new Track[0]);
+	}
+	
+	/**
+	 * Get albums with matching titles
+	 * 
+	 * @param title search item
+	 * 
+	 * @return albums with searched title
+	 */
+	public static Album[] getAlbumsByTitle(String search) {
+		ArrayList<Album> result = new ArrayList<Album>();
+		
+		Cursor c = mBansheeDatabase.query(
+				DB.TABLE_ALBUMS,
+				new String [] {DB.ID, DB.ARTIST_ID, DB.TITLE, DB.ART_ID},
+				DB.TITLE + " LIKE ?", new String [] { "%" + search + "%" },  null, null, DB.TITLE + " ASC");
+		
+		while (c.moveToNext()) {
+			String title = cleanString(c, 2);
+			Album i = new Album();
+			
+			i.id = c.getLong(0);
+			i.artistId = c.getLong(1);
+			i.title = "".equals(title) ? App.getContext().getString(R.string.unknown_album) : title;
+			i.artId = cleanString(c, 3);
+			
+			result.add(i);
+		}
+		c.close();
+		return result.toArray(new Album[0]);
+	}
+	
+	/**
+	 * Get albums with matching titles
+	 * 
+	 * @param title search item
+	 * 
+	 * @return albums with searched title
+	 */
+	public static Artist[] getArtistsByTitle(String search) {
+		ArrayList<Artist> result = new ArrayList<Artist>();
+		
+		Cursor c = mBansheeDatabase.query(DB.TABLE_ARTISTS, new String [] {DB.ID, DB.NAME}, DB.NAME + " LIKE ?", new String [] { "%" + search + "%" }, null, null,  DB.NAME + " ASC");
+		
+		while (c.moveToNext()) {
+			String title = cleanString(c, 1);
+			Artist i = new Artist();
+			
+			i.id = c.getLong(0);
+			i.name = "".equals(title) ? App.getContext().getString(R.string.unknown_artist) : title;
+			
+			result.add(i);
+		}
+		c.close();
+		return result.toArray(new Artist[0]);
 	}
 }

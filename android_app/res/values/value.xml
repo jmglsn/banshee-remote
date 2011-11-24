@@ -48,6 +48,8 @@
 	<string name="all_artists">All artists</string>
 	<string name="artist">Artist</string>
 	<string name="search">Search</string>
+	<string name="track">Track</string>
+	<string name="album">Album</string>
 	<string name="all_albums">All albums</string>
 	<string name="all_tracks">All tracks</string>
 	<string name="request_sent">Request sent, waiting for response...</string>
@@ -62,6 +64,13 @@
 	    <item quantity="one">One track removed from playlist</item>
 	    <item quantity="other">%d tracks removed from playlist</item>
 	</plurals>
+	
+    <string-array name="search_types">
+        <item>Track</item>
+        <item>Artist</item>
+        <item>Album</item>
+    </string-array>
+
 	
 	<!-- settings -->
 	

@@ -1,22 +1,26 @@
 package de.viktorreiser.bansheeremote.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import de.viktorreiser.bansheeremote.R;
 import de.viktorreiser.bansheeremote.data.BansheeConnection.Command;
 import de.viktorreiser.bansheeremote.data.BansheeDatabase;
+import de.viktorreiser.bansheeremote.data.BansheeDatabase.Album;
+import de.viktorreiser.bansheeremote.data.BansheeDatabase.Artist;
 import de.viktorreiser.bansheeremote.data.BansheeDatabase.Track;
-import de.viktorreiser.toolbox.util.L;
 
 /**
  * This will provide a simple search interface
@@ -26,10 +30,15 @@ import de.viktorreiser.toolbox.util.L;
 public class SearchActivity extends Activity implements OnItemClickListener{
 
 	private Track[] mTrackEntries;
+	private Artist[] mArtistEntries;
+	private Album[] mAlbumEntries;
 
+	private byte searchTyp = 0;
+	
 	private EditText searchTerm;
 	private ListView searchList;
 	private TrackAdapter adapter;
+	private Spinner searchSpinner;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +55,23 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 
 		searchTerm = (EditText) findViewById(R.id.search_term);
 		searchList = (ListView) findViewById(R.id.search_list);
+		searchSpinner = (Spinner) findViewById(R.id.search_spinner);
+		
+		searchSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+
+			@Override
+			public void onItemSelected(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				startSearch();
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> arg0) {
+				// nothing :)
+			}
+			
+		});
+		
 		adapter = new TrackAdapter();
 		searchList.setAdapter(adapter);
 		searchList.setOnItemClickListener(this);
@@ -54,15 +80,31 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 				.setOnClickListener(new OnClickListener() {
 					@Override
 					public void onClick(View v) {
-						startSearch(searchTerm.getText().toString());
+						startSearch();
 					}
 				});
 	}
 
-	private void startSearch(String term) {
-		mTrackEntries = BansheeDatabase.getTracksByTitle(term);
+	private void startSearch() {
+		String term = searchTerm.getText().toString();
+		String typ = (String) searchSpinner.getSelectedItem();
+		if (typ == null || term == null || term.trim().length() == 0) {
+			return;
+		}
+		mAlbumEntries = null;
+		mArtistEntries = null;
+		mTrackEntries = null;
+		if (typ.equalsIgnoreCase("Artist")) {
+			searchTyp = 1;
+			mArtistEntries = BansheeDatabase.getArtistsByTitle(term);
+		} else if (typ.equalsIgnoreCase("Album")) {
+			searchTyp = 2;
+			mAlbumEntries = BansheeDatabase.getAlbumsByTitle(term);
+		} else {
+			searchTyp = 0;
+			mTrackEntries = BansheeDatabase.getTracksByTitle(term);
+		}
 		adapter.notifyDataSetChanged();
-		L.e("BRS", "Found:_" + mTrackEntries.length);
 		
 	}
 
@@ -80,7 +122,13 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 
 		@Override
 		public int getCount() {
-			return mTrackEntries.length;
+			if (searchTyp == 0) {
+				return mTrackEntries.length;				
+			} else if (searchTyp == 1) {
+				return  mArtistEntries.length;
+			} else {
+				return mAlbumEntries.length;
+			}
 		}
 
 		@Override
@@ -103,9 +151,15 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 			}
 
 			ViewHolder holder = (ViewHolder) convertView.getTag();
-			Track i = mTrackEntries[position];
-			holder.track.setText(i.getTitle());
-
+			if (searchTyp == 0) {
+				holder.track.setText(mTrackEntries[position].getTitle());				
+			} else if (searchTyp == 1) {
+				holder.track.setText(mArtistEntries[position].getName());
+			} else if (searchTyp == 2) {
+				holder.track.setText(mAlbumEntries[position].getTitle());
+			}
+			
+			
 
 			return convertView;
 		}
@@ -118,9 +172,18 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 	
 	@Override
 	public void onItemClick(AdapterView<?> a, View v, int p, long id) {
-		CurrentSongActivity.getConnection().sendCommand(Command.PLAYLIST,
-				Command.Playlist.encodePlayTrack(mTrackEntries[p].getId()));
-		finish();
+		if (searchTyp == 0) {
+			CurrentSongActivity.getConnection().sendCommand(Command.PLAYLIST,
+					Command.Playlist.encodePlayTrack(mTrackEntries[p].getId()));
+			finish();			
+		} else if (searchTyp == 1) {
+			Intent showArtist = new Intent(this, ArtistActivity.class);
+			showArtist.putExtra(ArtistActivity.EXTRA_ARITST_ID, mArtistEntries[p].getId());
+			startActivity(showArtist);
+			finish();
+		} else if (searchTyp == 2) {
+			// not yet
+		}
 		return;
 	}
 }
