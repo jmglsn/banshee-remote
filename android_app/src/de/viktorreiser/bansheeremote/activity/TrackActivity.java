@@ -78,6 +78,9 @@ public class TrackActivity extends Activity implements OnBansheeCommandHandle, O
 				mAlbumId = getIntent().getLongExtra(EXTRA_ALBUM_ID, -1);
 				mArtistId = getIntent().getLongExtra(EXTRA_ARTIST_ID, -1);
 				mTrackEntries = BansheeDatabase.getOrderedTracksOfAlbum(mAlbumId);
+			} else if (getIntent().hasExtra(EXTRA_ALBUM_ID)) {
+				mAlbumId = getIntent().getLongExtra(EXTRA_ALBUM_ID, -1);
+				mTrackEntries = BansheeDatabase.getOrderedTracksOfAlbum(mAlbumId);
 			} else if (getIntent().hasExtra(EXTRA_ARTIST_ID)) {
 				mArtistId = getIntent().getLongExtra(EXTRA_ARTIST_ID, -1);
 				mTrackEntries = BansheeDatabase.getOrderedTracksOfArtist(mArtistId);

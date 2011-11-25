@@ -29,15 +29,16 @@ import de.viktorreiser.bansheeremote.data.BansheeDatabase.Track;
  */
 public class SearchActivity extends Activity implements OnItemClickListener{
 
-	private Track[] mTrackEntries;
-	private Artist[] mArtistEntries;
-	private Album[] mAlbumEntries;
+	private Track[] mTrackEntries = new Track[0];
+	private Artist[] mArtistEntries = new Artist[0];
+	private Album[] mAlbumEntries = new Album[0];
 
 	private byte searchTyp = 0;
 	
 	private EditText searchTerm;
+	private String lastTerm = null;
 	private ListView searchList;
-	private TrackAdapter adapter;
+	private SearchListAdapter adapter;
 	private Spinner searchSpinner;
 	
 	@Override
@@ -62,7 +63,7 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 			@Override
 			public void onItemSelected(AdapterView<?> arg0, View arg1,
 					int arg2, long arg3) {
-				startSearch();
+				refreshList();
 			}
 
 			@Override
@@ -72,7 +73,7 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 			
 		});
 		
-		adapter = new TrackAdapter();
+		adapter = new SearchListAdapter();
 		searchList.setAdapter(adapter);
 		searchList.setOnItemClickListener(this);
 
@@ -80,35 +81,56 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 				.setOnClickListener(new OnClickListener() {
 					@Override
 					public void onClick(View v) {
-						startSearch();
+						refreshList();
 					}
 				});
 	}
 
-	private void startSearch() {
+
+	/**
+	 * searches for tracks, artists and albums containing the search term in title / name
+	 */
+	private void refreshListData() {
 		String term = searchTerm.getText().toString();
-		String typ = (String) searchSpinner.getSelectedItem();
-		if (typ == null || term == null || term.trim().length() == 0) {
+		
+		if (term == null || term.trim().length() == 0) {
+			return;
+		} else if(term.equals(lastTerm)) {
 			return;
 		}
-		mAlbumEntries = null;
-		mArtistEntries = null;
-		mTrackEntries = null;
-		if (typ.equalsIgnoreCase("Artist")) {
-			searchTyp = 1;
-			mArtistEntries = BansheeDatabase.getArtistsByTitle(term);
-		} else if (typ.equalsIgnoreCase("Album")) {
-			searchTyp = 2;
-			mAlbumEntries = BansheeDatabase.getAlbumsByTitle(term);
-		} else {
-			searchTyp = 0;
-			mTrackEntries = BansheeDatabase.getTracksByTitle(term);
-		}
-		adapter.notifyDataSetChanged();
+		
+		lastTerm = term;
+		
+		mArtistEntries = BansheeDatabase.getArtistsByTitle(term);
+		mAlbumEntries = BansheeDatabase.getAlbumsByTitle(term);
+		mTrackEntries = BansheeDatabase.getTracksByTitle(term);
 		
 	}
+	
+	/**
+	 * show selected result list
+	 */
+	private void refreshList() {
+		refreshListData();
+		
+		String typ = (String) searchSpinner.getSelectedItem();
+		if (typ == null) {
+			return;
+		}
+		if (typ.equalsIgnoreCase("Artist")) {
+			searchTyp = 1;
+			
+		} else if (typ.equalsIgnoreCase("Album")) {
+			searchTyp = 2;
+			
+		} else {
+			searchTyp = 0;
+		}
+		adapter.notifyDataSetChanged();
+	}
 
-	private class TrackAdapter extends BaseAdapter {
+	
+	private class SearchListAdapter extends BaseAdapter {
 
 		@Override
 		public int getItemViewType(int position) {
@@ -177,12 +199,17 @@ public class SearchActivity extends Activity implements OnItemClickListener{
 					Command.Playlist.encodePlayTrack(mTrackEntries[p].getId()));
 			finish();			
 		} else if (searchTyp == 1) {
-			Intent showArtist = new Intent(this, ArtistActivity.class);
-			showArtist.putExtra(ArtistActivity.EXTRA_ARITST_ID, mArtistEntries[p].getId());
-			startActivity(showArtist);
+			BansheeDatabase.setupDbCache();
+			Intent showArtistTracks = new Intent(this, TrackActivity.class);
+			showArtistTracks.putExtra(TrackActivity.EXTRA_ARTIST_ID, mArtistEntries[p].getId());
+			startActivityForResult(showArtistTracks, 1);
 			finish();
 		} else if (searchTyp == 2) {
-			// not yet
+			BansheeDatabase.setupDbCache();
+			Intent showAlbumTracks = new Intent(this, TrackActivity.class);
+			showAlbumTracks.putExtra(TrackActivity.EXTRA_ALBUM_ID, mAlbumEntries[p].getId());
+			startActivityForResult(showAlbumTracks, 1);
+			finish();
 		}
 		return;
 	}
